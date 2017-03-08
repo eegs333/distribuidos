@@ -1,0 +1,20 @@
+#include "Coordenada.h"
+#include "Rectangulo.h"
+#include <iostream>
+#include <stdlib.h>
+using namespace std;
+
+Coordenada::Coordenada(double xx, double yy) : x(xx), y(yy)
+{ }
+double Coordenada::obtenerX()
+ {
+
+return x;
+ }
+
+ double Coordenada::obtenerY()
+ {
+
+return y;
+ }
+ 
