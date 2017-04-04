@@ -12,7 +12,7 @@ int puerto = 7200;
 // lol
 int main(int argn, char* args[])
 {
-    struct timeval now;
+
     if (argn >= 2) {
         SocketDatagrama socket(sizeof(now));
         PaqueteDatagrama paqueteEnviado((char *)&now, sizeof(now), args[1], puerto);
@@ -21,7 +21,8 @@ int main(int argn, char* args[])
         printf("Esperando paquete\n");
         socket.recibe(paqueteRecibido);
         printf("Paquete recibido\n");
-        printf("%d\n", *((int*)paqueteRecibido.obtieneDatos()));
+        //printf("%d\n", *((int*)paqueteRecibido.obtieneDatos()));
+        struct timeval now;
         memcpy(&now, paqueteRecibido.obtieneDatos(), sizeof(now));
         printf("%ld\n", now.tv_usec);
     } else {

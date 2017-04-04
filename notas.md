@@ -1,3 +1,7 @@
+struct x dato;
+PaqueteDatagrama envio((char *)(&dato),sizeof(dato))
+
+
 Componente fundamental de SD Red de computo,
 
 Tranferencia de mensajes
