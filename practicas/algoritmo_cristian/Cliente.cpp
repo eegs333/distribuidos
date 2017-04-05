@@ -11,6 +11,7 @@
 #include <sys/time.h>
 #include "PaqueteDatagrama.h"
 #include "SocketDatagrama.h"
+#include "gfx.h"
 int puerto = 7200;
 struct timeval gettime() {
 	struct timeval tv;
@@ -28,6 +29,30 @@ struct timeval gettime() {
 	printf ("%s\n", time_string);
 	return tv;
 }
+
+void screen(const char *string)
+{
+	int ysize = 300;
+	int xsize = 300;
+	char c;
+
+	// Open a new window for drawing.
+	gfx_open(xsize,ysize,"Example Graphics Program");
+
+	// Set the current drawing color to green.
+	gfx_color(0,200,100);
+	gfx_text(50, 50, string );
+
+	while(1) {
+		// Wait for the user to press a character.
+		c = gfx_wait();
+
+		// Quit if it is the letter q.
+		if(c=='q') break;
+	}
+}
+
+
 int main(int argn, char* args[])
 {
     struct timeval now;
@@ -59,6 +84,7 @@ int main(int argn, char* args[])
         printf("%ld\n", now.tv_usec);
         printf("%ld\n", now.tv_sec);
     	  printf ("%s.%03ld\n", time_string, milliseconds);
+				screen(time_string);
     } else {
         printf("Uso: %s ip\n",args[0]);
     }
