@@ -96,7 +96,7 @@ void gfx_line( int x1, int y1, int x2, int y2 )
 void gfx_text( int x, int y, const char *string )
 {
 	Font font;
-	font = XLoadFont(gfx_display, "DejaVuSansCondensed-BoldOblique");
+	font = XLoadFont(gfx_display, "r24");
 	XSetFont(gfx_display, gfx_gc, font);
 	XDrawString(gfx_display,gfx_window,gfx_gc,x,y, string, strlen(string));
 }
