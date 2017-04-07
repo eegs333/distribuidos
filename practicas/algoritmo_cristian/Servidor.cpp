@@ -28,7 +28,7 @@ struct timeval gettime() {
 	return tv;
 }
 int main(int argc, char** argv) {
-		char IP[] = "127.0.0.1";
+		char IP[] = "10.230.42.43";
 		struct timeval tv;
 		tv = gettime();
     SocketDatagrama socket(puerto);
