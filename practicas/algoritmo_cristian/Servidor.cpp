@@ -15,33 +15,34 @@ struct timeval gettime() {
 	struct timeval tv;
 	struct tm* ptm;
 	char time_string[40];
-	//long milliseconds;
+	long milliseconds;
 	//obtiene tiempo
 	gettimeofday (&tv, NULL);
-	printf("%ld\n",tv.tv_sec);
-	printf("%ld\n",tv.tv_usec);
+	//printf("%ld\n",tv.tv_sec);
+	//printf("%ld\n",tv.tv_usec);
 	//formato tiempo
 	ptm = localtime (&tv.tv_sec);
 	strftime (time_string, sizeof (time_string), "%H:%M:%S", ptm);
-	//milliseconds = tv.tv_usec / 1000;
-	printf ("%s\n", time_string);
+	milliseconds = tv.tv_usec / 1000;
+	printf ("%s.%03ld\n", time_string, milliseconds);
 	return tv;
 }
 int main(int argc, char** argv) {
-		char IP[] = "10.230.42.43";
+		//char IP[] = "10.230.42.38";
 		struct timeval tv;
 		tv = gettime();
     SocketDatagrama socket(puerto);
 		PaqueteDatagrama paqueteRecibido(sizeof(tv));
-		PaqueteDatagrama paqueteEnviado((char *)&tv,sizeof(tv),IP,puerto);
+		//PaqueteDatagrama paqueteEnviado((char *)&tv,sizeof(tv),IP,puerto);
 		printf("Esperando solicitud de hora...\n");
 		while (1) {
-					if (socket.recibe(paqueteRecibido)){
+					//if (socket.recibe(paqueteRecibido)){
+						socket.recibe(paqueteRecibido);
 						tv = gettime();
-						PaqueteDatagrama paqueteEnviado((char *)&tv,sizeof(tv),IP,puerto);
+						PaqueteDatagrama paqueteEnviado((char *)&tv,sizeof(tv),paqueteRecibido.obtieneDireccion(),puerto);
 						paqueteEnviado.inicializaPuerto(paqueteRecibido.obtienePuerto());
 						socket.envia(paqueteEnviado);
-						printf("Enviando hora...\n" );
-					}
+						//printf("Enviando hora...\n" );
+					//}
     }
 }
