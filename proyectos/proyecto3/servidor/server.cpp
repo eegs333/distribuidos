@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h> //list_files
 #include <fcntl.h> //list_files
 #include <unistd.h> //list_files
@@ -17,11 +18,13 @@ using namespace std;
 
 //obtiene la lista de archivos de un directorio
 vector<string> list_files(const char *ldir){
+	//cout << "iniciando list_files.... " << endl;
 	vector<string> files;
 	DIR *dir;
 	struct dirent *ent;
 	int offset, origen;
 	if ((dir = opendir (ldir)) != NULL) {
+
   while ((ent = readdir (dir)) != NULL) {
 		if(ent->d_name[0] !='.'){
 			files.push_back(ent->d_name);
@@ -33,35 +36,42 @@ vector<string> list_files(const char *ldir){
 }
 
 //estructura para los datos a devolver
-struct s_word{
-	string fileName;
-	string word;
-	string offset;
+struct c_word{
+	//const char* fileName;
+	//const char* word;
+	char fileName[32];
+	char word[32];
+	char offset[32];
 };
 
 //funcion que busca la cadena
-s_word search_word(const char *word, const char *file, const char *dir){
+c_word search_word(const char *word, const char *file, const char *dir){
 
-	s_word newSearch;
+	c_word charSearch;
 	int ocurrences_count = 0;
 	int array_size = 1024;
 	char * array = new char[array_size];
 	int position = 0;
 	int word_size = 0;
+	int offsets[10];
 	char namFil[32];
+	char result[32];
+	char buffer [32];
 	strcpy(namFil,dir);
 	strcat(namFil,file);
-	vector<int> offsets;
 
 	for(int i = 0; word[i] != '\0'; i++){
     word_size++;
   }
-	newSearch.fileName = file;
-	newSearch.word = word;
-	newSearch.offset = "offset = ";
+
+	strcpy(charSearch.fileName,file);
+	strcpy(charSearch.word,word);
+	//charSearch.fileName = file;
+	//charSearch.word = word;
+	//strcpy(result,"offset = ");
 
 	ifstream fin(namFil);
-
+	cout << "namFil: " <<namFil << endl;
 	if(fin.is_open()){
   	while(!fin.eof() && position < array_size){
 			fin.get(array[position]);
@@ -77,35 +87,32 @@ s_word search_word(const char *word, const char *file, const char *dir){
         else{
           i++;
           if(word[j+1] == '\0'){
-						offsets.push_back(i-word_size);
+						offsets[ocurrences_count] = i-word_size;
 						ocurrences_count++;
           }
         }
       }
 		}
-
-			for(vector<int>::iterator it = offsets.begin(); it != offsets.end(); it++) {
-				ostringstream ostr;
-				ostr << *it;
-				string Result = ostr.str();
-				newSearch.offset.append(Result + " ");
+			strcpy(result,"offset = ");
+			for(int i = 0; i < ocurrences_count; i++){
+				snprintf(buffer, sizeof(buffer), "%d,", offsets[i]);
+				strcat(result,buffer);
+				//cout << result << endl;
 			}
+			strcpy(charSearch.offset,result);
+			//charSearch.offset = result;
 	}
 	else{
 		cout << "File could not be opened." << endl;
 	}
-	return newSearch;
+	//cout << "finalizando search_word.... " << endl;
+	return charSearch;
 }
 
 int main(int argc, char** argv){
 	char *dir = argv[1];
-	//char *word = argv[2];
 	char word[20];
-	s_word sw;
-	//char* sw_bytes = reinterpret_cast<char*>(&sw);
-
-
-
+	c_word sw;
 
 	SocketDatagrama socket(puerto);
 	printf("Esperando mensajes...\n");
@@ -117,14 +124,15 @@ int main(int argc, char** argv){
 		vector<string> str_vec = list_files(dir);
 	     for(vector<string>::iterator it_file = str_vec.begin(); it_file != str_vec.end(); it_file++) {
 					sw = search_word(rword,(*it_file).c_str(),dir);
-					char b[sizeof(sw)];
-					memcpy(b, &sw, sizeof(sw));
-					//char* sw_bytes = reinterpret_cast<char*>(&sw);
-					PaqueteDatagrama paqueteEnviado(b,sizeof(b),paqueteRecibido.obtieneDireccion(),puerto);
+					//char b[sizeof(sw)];
+					//memcpy(b, sw, sizeof(sw));
+					//char* sw_bytes = reinterpret_cast<char*>(sw);
+					PaqueteDatagrama paqueteEnviado((char *)&sw, (sizeof(sw)), paqueteRecibido.obtieneDireccion(),puerto);
 					paqueteEnviado.inicializaPuerto(paqueteRecibido.obtienePuerto());
 					socket.envia(paqueteEnviado);
-					cout << b << endl;
+					//cout << sw << endl;
 					cout << sw.fileName << endl;
+					cout << sw.word << endl;
 					cout << sw.offset << endl;
 	     }
 		}
