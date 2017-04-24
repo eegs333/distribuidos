@@ -18,7 +18,6 @@ using namespace std;
 
 //obtiene la lista de archivos de un directorio
 vector<string> list_files(const char *ldir){
-	//cout << "iniciando list_files.... " << endl;
 	vector<string> files;
 	DIR *dir;
 	struct dirent *ent;
@@ -37,10 +36,7 @@ vector<string> list_files(const char *ldir){
 
 //estructura para los datos a devolver
 struct c_word{
-	//const char* fileName;
-	//const char* word;
 	char fileName[32];
-	char word[32];
 	char offset[32];
 };
 
@@ -65,13 +61,12 @@ c_word search_word(const char *word, const char *file, const char *dir){
   }
 
 	strcpy(charSearch.fileName,file);
-	strcpy(charSearch.word,word);
-	//charSearch.fileName = file;
-	//charSearch.word = word;
-	//strcpy(result,"offset = ");
+	//strcat(charSearch.fileName,"\n");
+	//strcpy(charSearch.word,word);
+	//strcat(charSearch.word,"\n");
 
 	ifstream fin(namFil);
-	cout << "namFil: " <<namFil << endl;
+	//cout << "namFil: " <<namFil << endl;
 	if(fin.is_open()){
   	while(!fin.eof() && position < array_size){
 			fin.get(array[position]);
@@ -97,26 +92,27 @@ c_word search_word(const char *word, const char *file, const char *dir){
 			for(int i = 0; i < ocurrences_count; i++){
 				snprintf(buffer, sizeof(buffer), "%d,", offsets[i]);
 				strcat(result,buffer);
-				//cout << result << endl;
 			}
 			strcpy(charSearch.offset,result);
-			//charSearch.offset = result;
+			strcat(charSearch.offset,"\n");
 	}
 	else{
 		cout << "File could not be opened." << endl;
 	}
-	//cout << "finalizando search_word.... " << endl;
 	return charSearch;
 }
 
 int main(int argc, char** argv){
 	char *dir = argv[1];
 	char word[20];
-	c_word sw;
+	struct c_word sw;
+ 	char buffer[sizeof(sw)];
+
 
 	SocketDatagrama socket(puerto);
 	printf("Esperando mensajes...\n");
 	while (1) {
+		char buffer[sizeof(sw)];
 		PaqueteDatagrama paqueteRecibido(sizeof(word));
     socket.recibe(paqueteRecibido);
     char* rword=paqueteRecibido.obtieneDatos();
@@ -124,15 +120,11 @@ int main(int argc, char** argv){
 		vector<string> str_vec = list_files(dir);
 	     for(vector<string>::iterator it_file = str_vec.begin(); it_file != str_vec.end(); it_file++) {
 					sw = search_word(rword,(*it_file).c_str(),dir);
-					//char b[sizeof(sw)];
-					//memcpy(b, sw, sizeof(sw));
-					//char* sw_bytes = reinterpret_cast<char*>(sw);
-					PaqueteDatagrama paqueteEnviado((char *)&sw, (sizeof(sw)), paqueteRecibido.obtieneDireccion(),puerto);
+					memcpy(&buffer, &sw, sizeof(sw));
+					PaqueteDatagrama paqueteEnviado(buffer,sizeof(buffer), paqueteRecibido.obtieneDireccion(),puerto);
 					paqueteEnviado.inicializaPuerto(paqueteRecibido.obtienePuerto());
 					socket.envia(paqueteEnviado);
-					//cout << sw << endl;
 					cout << sw.fileName << endl;
-					cout << sw.word << endl;
 					cout << sw.offset << endl;
 	     }
 		}

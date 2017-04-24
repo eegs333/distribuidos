@@ -1,3 +1,5 @@
+//Cliente.java
+//Cliente java, recibe como parametros la ip del servidor y la palabra a buscar
 import java.net.*;
 import java.nio.*;
 import java.io.*;

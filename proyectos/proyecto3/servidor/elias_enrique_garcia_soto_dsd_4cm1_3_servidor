@@ -1,0 +1,277 @@
+//server.cpp
+//codigo del servidor, recibe como parametro el directorio donde se encuentran los archivos de busqueda
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h> //list_files
+#include <fcntl.h> //list_files
+#include <unistd.h> //list_files
+#include <cstdlib> //list_files
+#include <dirent.h> //list_files
+#include <vector> //list_files
+#include <iostream> //list_files
+#include <fstream> //search_word
+#include <string> //search_word
+#include <sstream> //search_word
+#include "PaqueteDatagrama.h"
+#include "SocketDatagrama.h"
+
+int puerto = 7200;
+using namespace std;
+
+//obtiene la lista de archivos de un directorio
+vector<string> list_files(const char *ldir){
+	vector<string> files;
+	DIR *dir;
+	struct dirent *ent;
+	int offset, origen;
+	if ((dir = opendir (ldir)) != NULL) {
+
+  while ((ent = readdir (dir)) != NULL) {
+		if(ent->d_name[0] !='.'){
+			files.push_back(ent->d_name);
+		}
+  }
+  closedir (dir);
+	}
+	return files;
+}
+
+//estructura para los datos a devolver
+struct c_word{
+	char fileName[32];
+	char offset[32];
+};
+
+//funcion que busca la cadena
+c_word search_word(const char *word, const char *file, const char *dir){
+
+	c_word charSearch;
+	int ocurrences_count = 0;
+	int array_size = 1024;
+	char * array = new char[array_size];
+	int position = 0;
+	int word_size = 0;
+	int offsets[10];
+	char namFil[32];
+	char result[32];
+	char buffer [32];
+	strcpy(namFil,dir);
+	strcat(namFil,file);
+
+	for(int i = 0; word[i] != '\0'; i++){
+    word_size++;
+  }
+
+	strcpy(charSearch.fileName,file);
+	//strcat(charSearch.fileName,"\n");
+	//strcpy(charSearch.word,word);
+	//strcat(charSearch.word,"\n");
+
+	ifstream fin(namFil);
+	//cout << "namFil: " <<namFil << endl;
+	if(fin.is_open()){
+  	while(!fin.eof() && position < array_size){
+			fin.get(array[position]);
+			position++;
+		}
+		array[position-1] = '\0';
+
+  	for(int i = 0; array[i] != '\0'; i++){
+			for(int j = 0; word[j] != '\0' && j < 20 ; j++){
+        if(array[i] != word[j]){
+          break;
+        }
+        else{
+          i++;
+          if(word[j+1] == '\0'){
+						offsets[ocurrences_count] = i-word_size;
+						ocurrences_count++;
+          }
+        }
+      }
+		}
+			strcpy(result,"offset = ");
+			for(int i = 0; i < ocurrences_count; i++){
+				snprintf(buffer, sizeof(buffer), "%d,", offsets[i]);
+				strcat(result,buffer);
+			}
+			strcpy(charSearch.offset,result);
+			strcat(charSearch.offset,"\n");
+	}
+	else{
+		cout << "File could not be opened." << endl;
+	}
+	return charSearch;
+}
+
+int main(int argc, char** argv){
+	char *dir = argv[1];
+	char word[20];
+	struct c_word sw;
+ 	char buffer[sizeof(sw)];
+
+
+	SocketDatagrama socket(puerto);
+	printf("Esperando mensajes...\n");
+	while (1) {
+		char buffer[sizeof(sw)];
+		PaqueteDatagrama paqueteRecibido(sizeof(word));
+    socket.recibe(paqueteRecibido);
+    char* rword=paqueteRecibido.obtieneDatos();
+    cout <<"Cadena a buscar: "<<rword<<"\n";
+		vector<string> str_vec = list_files(dir);
+	     for(vector<string>::iterator it_file = str_vec.begin(); it_file != str_vec.end(); it_file++) {
+					sw = search_word(rword,(*it_file).c_str(),dir);
+					memcpy(&buffer, &sw, sizeof(sw));
+					PaqueteDatagrama paqueteEnviado(buffer,sizeof(buffer), paqueteRecibido.obtieneDireccion(),puerto);
+					paqueteEnviado.inicializaPuerto(paqueteRecibido.obtienePuerto());
+					socket.envia(paqueteEnviado);
+					cout << sw.fileName << endl;
+					cout << sw.offset << endl;
+	     }
+		}
+}
+*******************************************************************************
+//Makefile
+server: SocketDatagrama.o PaqueteDatagrama.o
+	g++ server.cpp SocketDatagrama.o PaqueteDatagrama.o -o server
+
+SocketDatagrama.o: SocketDatagrama.cpp SocketDatagrama.h
+	g++ SocketDatagrama.cpp -c
+
+PaqueteDatagrama.o: PaqueteDatagrama.cpp PaqueteDatagrama.h
+	g++ PaqueteDatagrama.cpp -c
+
+clean:
+	rm *.o server
+*******************************************************************************
+//PaqueteDatagrama.h
+#ifndef PAQUETEDATAGRAMA
+#define PAQUETEDATAGRAMA
+class PaqueteDatagrama {
+public:
+PaqueteDatagrama(char *, unsigned int, char *, int );
+PaqueteDatagrama(unsigned int );
+~PaqueteDatagrama();
+char *obtieneDireccion();
+unsigned int obtieneLongitud();
+int obtienePuerto();
+char *obtieneDatos();
+void inicializaPuerto(int);
+void inicializaIp(char *);
+void inicializaDatos(char *);
+private:
+char *datos; //Almacena los datos
+char ip[16]; //Almacena la IP
+unsigned int longitud; //Almacena la longitude de la cadena de datos
+int puerto; //Almacena el puerto
+};
+#endif
+
+*******************************************************************************
+PaqueteDatagrama.cpp
+#include "PaqueteDatagrama.h"
+#include <cstring>
+PaqueteDatagrama::PaqueteDatagrama(char* data,unsigned int longi,char* ip,int puerto){
+	inicializaPuerto(puerto);
+	longitud=longi;
+	datos=new char[longi];
+	inicializaDatos(data);
+	inicializaIp(ip);
+
+}
+PaqueteDatagrama::~PaqueteDatagrama(){
+	delete[](datos);
+}
+PaqueteDatagrama::PaqueteDatagrama(unsigned int longi){
+	longitud=longi;
+	datos=new char[longitud];
+}
+char* PaqueteDatagrama::obtieneDireccion(){
+	return ip;
+}
+unsigned int PaqueteDatagrama::obtieneLongitud(){
+	return longitud;
+}
+int PaqueteDatagrama::obtienePuerto(){
+	return puerto;
+}
+char* PaqueteDatagrama::obtieneDatos(){
+	return datos;
+}
+void PaqueteDatagrama::inicializaPuerto(int p){
+	puerto=p;
+}
+void PaqueteDatagrama::inicializaIp(char* Ip){
+	memcpy(ip,Ip,16);
+}
+void PaqueteDatagrama::inicializaDatos(char* data){
+	memcpy(datos,data,longitud);
+}
+*******************************************************************************
+//SocketDatagrama.h
+#ifndef SOCKET_DATAGRAMA_H
+#define SOCKET_DATAGRAMA_H
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include "PaqueteDatagrama.h"
+#include <netinet/in.h>
+
+class SocketDatagrama {
+public:
+    SocketDatagrama(int);
+    ~SocketDatagrama();
+        // Recibe un datagrama proveniente de este socket
+    int recibe(PaqueteDatagrama &p);
+        //Envia un paquete tipo datagrama desde este socket
+    int envia(PaqueteDatagrama &p);
+private:
+    struct sockaddr_in direccionLocal;
+    struct sockaddr_in direccionForanea;
+    int s;
+};
+
+#endif
+*******************************************************************************
+//SocketDatagrama.cpp
+#include "SocketDatagrama.h"
+#include "PaqueteDatagrama.h"
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <strings.h>
+#include <arpa/inet.h>
+#include <cstdio>
+
+SocketDatagrama::SocketDatagrama(int port) {
+    s = socket(AF_INET, SOCK_DGRAM, 0);
+
+    bzero((char*) &direccionLocal, sizeof(direccionLocal));
+    direccionLocal.sin_family = AF_INET;
+    direccionLocal.sin_addr.s_addr = INADDR_ANY;
+    direccionLocal.sin_port = htons(port);
+    bind(s, (struct sockaddr *)&direccionLocal,sizeof(direccionLocal));
+
+    bzero((char*) &direccionForanea, sizeof(direccionForanea));
+    direccionForanea.sin_family = AF_INET;
+}
+
+SocketDatagrama::~SocketDatagrama() {
+    close(s);
+}
+
+int SocketDatagrama::recibe(PaqueteDatagrama &p) {
+    unsigned int length = sizeof(direccionForanea);
+    int bytes = recvfrom(s, p.obtieneDatos(), p.obtieneLongitud(), 0, (struct sockaddr *)&direccionForanea, &length);
+    p.inicializaPuerto(ntohs(direccionForanea.sin_port));
+    p.inicializaIp(inet_ntoa(direccionForanea.sin_addr));
+    return bytes;
+}
+
+int SocketDatagrama::envia(PaqueteDatagrama &p){
+    direccionForanea.sin_port = htons(p.obtienePuerto());
+    direccionForanea.sin_addr.s_addr = inet_addr(p.obtieneDireccion());
+    return sendto(s, p.obtieneDatos(), p.obtieneLongitud(), 0, (struct sockaddr *) &direccionForanea, sizeof(direccionForanea));
+}
