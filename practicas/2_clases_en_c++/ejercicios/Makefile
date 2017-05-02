@@ -10,5 +10,5 @@ Temperatura.o: Temperatura.h
 Fraccion.o: Fraccion.h
 	c++ Fraccion.cpp -c
 
-Clean:
+clean:
 	rm *.o
