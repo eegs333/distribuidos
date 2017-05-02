@@ -13,6 +13,6 @@ int main(){
 	min = (n/60)%60;
 	hr = (n/60)/60;
 
-	cout << "hr: " << hr << " min: " << min << " seg: " << seg;
+	cout << "hr: " << hr << " min: " << min << " seg: " << seg << endl;
 	return 0;
 }
