@@ -1,69 +1,49 @@
 #include <iostream>
- using namespace std;
+using namespace std;
 
- class Coordenada
- {
- private:
+class Coordenada{
+  private:
+    double x;
+    double y;
 
-double x;
+  public:
+    Coordenada(double = 0, double = 0);
+    double obtenerX();
+    double obtenerY();
+  };
 
-double y;
- public:
+class Rectangulo{
+  private:
+    Coordenada superiorIzq;
+    Coordenada inferiorDer;
 
-Coordenada(double = 0, double = 0);
+  public:
+    Rectangulo();
+    Rectangulo(double xSupIzq, double ySupIzq, double xInfDer, double yInfDer);
+    void imprimeEsq();
+    Coordenada obtieneSupIzq();
+    Coordenada obtieneInfDer();
+  };
 
-double obtenerX();
+int main( ){
 
-double obtenerY();
- };
+  Rectangulo rectangulo1(2,3,5,1);
+  double ancho, alto;
 
- class Rectangulo
- {
- private:
+  cout << "Calculando el área de un rectángulo dadas sus coordenadas en un plano cartesiano:\n";
 
-Coordenada superiorIzq;
+  rectangulo1.imprimeEsq();
+  alto = rectangulo1.obtieneSupIzq().obtenerY() -
+  rectangulo1.obtieneInfDer().obtenerY();
+  ancho = rectangulo1.obtieneInfDer().obtenerX() -
+  rectangulo1.obtieneSupIzq().obtenerX();
 
-Coordenada inferiorDer;
- public:
+  cout << "El área del rectángulo es = " << ancho*alto << endl;
 
-Rectangulo();
+  return 0;
+}
 
-Rectangulo(double xSupIzq, double ySupIzq, double xInfDer, double yInfDer);
-
-void imprimeEsq();
-
-Coordenada obtieneSupIzq();
-
-Coordenada obtieneInfDer();
- };
-
- int main( )
- {
-
-//Rectangulo rectangulo1(2,3,5,1);
-Rectangulo rectangulo1(Coordenada(2,3),Coordenada(5,1));
-
-double ancho, alto;
-
-
-cout << "Calculando el área de un rectángulo dadas sus coordenadas en un plano cartesiano:\n";
-
-rectangulo1.imprimeEsq();
-
-
-alto = rectangulo1.obtieneSupIzq().obtenerY() -
-rectangulo1.obtieneInfDer().obtenerY();
-
-ancho = rectangulo1.obtieneInfDer().obtenerX() -
-rectangulo1.obtieneSupIzq().obtenerX();
-
-cout << "El área del rectángulo es = " << ancho*alto << endl;
-
-return 0;
- }
-
- Coordenada::Coordenada(double xx, double yy) : x(xx), y(yy)
- { }
+ Coordenada::Coordenada(double xx, double yy) : x(xx), y(yy){ }
  double Coordenada::obtenerX()
  {
 
